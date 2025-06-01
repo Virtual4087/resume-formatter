@@ -25,8 +25,8 @@ A sophisticated Flask-based web application that transforms plain text resumes i
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd resume-parser-latest
+   git clone https://github.com/Virtual4087/resume-formatter
+   cd resume-parser
    ```
 
 2. **Create a virtual environment**
