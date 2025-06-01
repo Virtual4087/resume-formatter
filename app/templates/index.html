@@ -194,6 +194,29 @@
 			.achievements li {
 				margin-bottom: 3px;
 			}
+			.certifications-list {
+				margin-left: 20px;
+				margin-bottom: 15px;
+			}
+			.certifications-list li {
+				margin-bottom: 5px;
+				list-style-type: disc;
+			}
+			.certification-controls {
+				margin-top: 10px;
+				margin-left: 20px;
+			}
+			.certification-item {
+				position: relative;
+			}
+			.delete-certification-btn {
+				color: #dc3545;
+				cursor: pointer;
+				font-size: 12px;
+			}
+			.delete-certification-btn:hover {
+				color: #c82333;
+			}
 			.preview-controls {
 				display: flex;
 				justify-content: space-between;
@@ -413,11 +436,17 @@
 							<!-- Work experience will be populated here -->
 						</div>
 					</div>
-
 					<div class="preview-section">
 						<h3>Education:</h3>
 						<div id="education">
 							<!-- Education will be populated here -->
+						</div>
+					</div>
+
+					<div class="preview-section">
+						<h3>Certifications:</h3>
+						<div id="certifications">
+							<!-- Certifications will be populated here -->
 						</div>
 					</div>
 
@@ -886,9 +915,202 @@
 				degreeRow.appendChild(degreeDiv);
 				degreeRow.appendChild(gradYearDiv);
 				eduDiv.appendChild(degreeRow);
-
 				educationContainer.innerHTML = "";
 				educationContainer.appendChild(eduDiv);
+
+				// Set certifications
+				const certificationsContainer =
+					document.getElementById("certifications");
+				certificationsContainer.innerHTML = "";
+
+				if (data.certifications && data.certifications.length > 0) {
+					const certificationsList = document.createElement("ul");
+					certificationsList.className = "certifications-list";
+
+					data.certifications.forEach((certification, index) => {
+						const li = document.createElement("li");
+						li.className = "editable-container certification-item";
+						li.dataset.index = index;
+
+						const certEditLabel = document.createElement("span");
+						certEditLabel.className = "edit-label";
+						certEditLabel.textContent = "Edit Certification";
+						li.appendChild(certEditLabel);
+
+						const certEditable = document.createElement("span");
+						certEditable.contentEditable = true;
+						certEditable.className = "certification-name";
+						certEditable.textContent = certification;
+						li.appendChild(certEditable);
+
+						const controlSpan = document.createElement("span");
+						controlSpan.style.marginLeft = "5px";
+
+						const deleteBtn = document.createElement("i");
+						deleteBtn.className = "fas fa-times delete-certification-btn";
+						deleteBtn.title = "Delete certification";
+						deleteBtn.onclick = function () {
+							li.remove();
+						};
+
+						controlSpan.appendChild(deleteBtn);
+						li.appendChild(controlSpan);
+
+						certificationsList.appendChild(li);
+					});
+
+					// Add certification controls
+					const certificationControls = document.createElement("div");
+					certificationControls.className = "certification-controls";
+
+					const addCertificationBtn = document.createElement("button");
+					addCertificationBtn.type = "button";
+					addCertificationBtn.className = "btn btn-sm btn-outline-primary";
+					addCertificationBtn.innerHTML =
+						'<i class="fas fa-plus"></i> Add Certification';
+					addCertificationBtn.onclick = function () {
+						const newLi = document.createElement("li");
+						newLi.className = "editable-container certification-item";
+						newLi.dataset.index = "new";
+
+						const newEditLabel = document.createElement("span");
+						newEditLabel.className = "edit-label";
+						newEditLabel.textContent = "Edit Certification";
+						newLi.appendChild(newEditLabel);
+
+						const newEditable = document.createElement("span");
+						newEditable.contentEditable = true;
+						newEditable.className = "certification-name";
+						newEditable.textContent = "New Certification";
+						newLi.appendChild(newEditable);
+
+						const newControlSpan = document.createElement("span");
+						newControlSpan.style.marginLeft = "5px";
+
+						const newDeleteBtn = document.createElement("i");
+						newDeleteBtn.className = "fas fa-times delete-certification-btn";
+						newDeleteBtn.title = "Delete certification";
+						newDeleteBtn.onclick = function () {
+							newLi.remove();
+						};
+
+						newControlSpan.appendChild(newDeleteBtn);
+						newLi.appendChild(newControlSpan);
+
+						certificationsList.appendChild(newLi);
+						newEditable.focus();
+					};
+
+					certificationControls.appendChild(addCertificationBtn);
+					certificationsContainer.appendChild(certificationsList);
+					certificationsContainer.appendChild(certificationControls);
+				} else {
+					// Show add button even if no certifications exist
+					const noCertificationsMessage = document.createElement("p");
+					noCertificationsMessage.textContent = "No certifications added yet.";
+					noCertificationsMessage.className = "text-muted";
+
+					const addFirstCertificationBtn = document.createElement("button");
+					addFirstCertificationBtn.type = "button";
+					addFirstCertificationBtn.className = "btn btn-sm btn-outline-primary";
+					addFirstCertificationBtn.innerHTML =
+						'<i class="fas fa-plus"></i> Add Certification';
+					addFirstCertificationBtn.onclick = function () {
+						// Create the list structure
+						const certificationsList = document.createElement("ul");
+						certificationsList.className = "certifications-list";
+
+						const newLi = document.createElement("li");
+						newLi.className = "editable-container certification-item";
+						newLi.dataset.index = "new";
+
+						const newEditLabel = document.createElement("span");
+						newEditLabel.className = "edit-label";
+						newEditLabel.textContent = "Edit Certification";
+						newLi.appendChild(newEditLabel);
+
+						const newEditable = document.createElement("span");
+						newEditable.contentEditable = true;
+						newEditable.className = "certification-name";
+						newEditable.textContent = "New Certification";
+						newLi.appendChild(newEditable);
+
+						const newControlSpan = document.createElement("span");
+						newControlSpan.style.marginLeft = "5px";
+
+						const newDeleteBtn = document.createElement("i");
+						newDeleteBtn.className = "fas fa-times delete-certification-btn";
+						newDeleteBtn.title = "Delete certification";
+						newDeleteBtn.onclick = function () {
+							newLi.remove();
+							// If no more certifications, show the "add first" button again
+							if (certificationsList.children.length === 0) {
+								certificationsContainer.innerHTML = "";
+								certificationsContainer.appendChild(noCertificationsMessage);
+								certificationsContainer.appendChild(addFirstCertificationBtn);
+							}
+						};
+
+						newControlSpan.appendChild(newDeleteBtn);
+						newLi.appendChild(newControlSpan);
+
+						certificationsList.appendChild(newLi);
+
+						// Add the standard add button
+						const certificationControls = document.createElement("div");
+						certificationControls.className = "certification-controls";
+
+						const addCertificationBtn = document.createElement("button");
+						addCertificationBtn.type = "button";
+						addCertificationBtn.className = "btn btn-sm btn-outline-primary";
+						addCertificationBtn.innerHTML =
+							'<i class="fas fa-plus"></i> Add Certification';
+						addCertificationBtn.onclick = function () {
+							const anotherLi = document.createElement("li");
+							anotherLi.className = "editable-container certification-item";
+							anotherLi.dataset.index = "new";
+
+							const anotherEditLabel = document.createElement("span");
+							anotherEditLabel.className = "edit-label";
+							anotherEditLabel.textContent = "Edit Certification";
+							anotherLi.appendChild(anotherEditLabel);
+
+							const anotherEditable = document.createElement("span");
+							anotherEditable.contentEditable = true;
+							anotherEditable.className = "certification-name";
+							anotherEditable.textContent = "New Certification";
+							anotherLi.appendChild(anotherEditable);
+
+							const anotherControlSpan = document.createElement("span");
+							anotherControlSpan.style.marginLeft = "5px";
+
+							const anotherDeleteBtn = document.createElement("i");
+							anotherDeleteBtn.className =
+								"fas fa-times delete-certification-btn";
+							anotherDeleteBtn.title = "Delete certification";
+							anotherDeleteBtn.onclick = function () {
+								anotherLi.remove();
+							};
+
+							anotherControlSpan.appendChild(anotherDeleteBtn);
+							anotherLi.appendChild(anotherControlSpan);
+
+							certificationsList.appendChild(anotherLi);
+							anotherEditable.focus();
+						};
+
+						certificationControls.appendChild(addCertificationBtn);
+
+						// Replace the content
+						certificationsContainer.innerHTML = "";
+						certificationsContainer.appendChild(certificationsList);
+						certificationsContainer.appendChild(certificationControls);
+						newEditable.focus();
+					};
+
+					certificationsContainer.appendChild(noCertificationsMessage);
+					certificationsContainer.appendChild(addFirstCertificationBtn);
+				}
 
 				// Show the preview container
 				document.getElementById("previewContainer").style.display = "block";
@@ -1032,13 +1254,29 @@
 				if (gradYear.includes(":")) {
 					gradYear = gradYear.split(":")[1].trim();
 				}
-
 				currentResumeData.education = {
 					institution: institution,
 					location: eduLocation,
 					degree: degree,
 					graduation_year: gradYear,
 				};
+
+				// Collect certifications changes
+				const updatedCertifications = [];
+				const certificationItems = document.querySelectorAll(
+					".certification-item"
+				);
+
+				certificationItems.forEach((certItem) => {
+					const certName = certItem
+						.querySelector(".certification-name")
+						.textContent.trim();
+					if (certName && certName !== "New Certification") {
+						updatedCertifications.push(certName);
+					}
+				});
+
+				currentResumeData.certifications = updatedCertifications;
 
 				// Determine which endpoint to call based on format
 				const endpoint = format === "pdf" ? "/generate/pdf" : "/generate";

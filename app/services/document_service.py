@@ -44,16 +44,34 @@ class DocumentGenerator:
             from docx2pdf import convert
             import tempfile
             import os
+            import platform
             
-            # We need to save to temp files for the conversion
-            with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_docx:
-                temp_docx.write(docx_stream.getvalue())
-                temp_docx_path = temp_docx.name
+            # Check if we're on Windows and Word is available
+            if platform.system() == "Windows":
+                try:
+                    import win32com.client
+                except ImportError:
+                    print("pywin32 not installed. Install with: pip install pywin32")
+                    return None
             
-            temp_pdf_path = temp_docx_path.replace('.docx', '.pdf')
+            # Create temp directory to avoid path issues
+            temp_dir = tempfile.mkdtemp()
+            temp_docx_path = os.path.join(temp_dir, "resume.docx")
+            temp_pdf_path = os.path.join(temp_dir, "resume.pdf")
+            
+            # Save DOCX to temp file
+            with open(temp_docx_path, 'wb') as f:
+                f.write(docx_stream.getvalue())
+            
+            print(f"Converting: {temp_docx_path} -> {temp_pdf_path}")
             
             # Convert docx to pdf
             convert(temp_docx_path, temp_pdf_path)
+            
+            # Check if PDF was created
+            if not os.path.exists(temp_pdf_path):
+                print("PDF file was not created")
+                return None
             
             # Read the PDF into memory
             with open(temp_pdf_path, 'rb') as f:
@@ -61,8 +79,8 @@ class DocumentGenerator:
             
             # Clean up temp files
             try:
-                os.remove(temp_docx_path)
-                os.remove(temp_pdf_path)
+                import shutil
+                shutil.rmtree(temp_dir)
             except Exception as e:
                 print(f"Error cleaning up temp files: {str(e)}")
             
@@ -70,13 +88,16 @@ class DocumentGenerator:
             pdf_stream = BytesIO(pdf_bytes)
             return pdf_stream
             
-        except ImportError:
-            print("docx2pdf module not installed")
+        except ImportError as e:
+            print(f"Missing dependency: {str(e)}")
+            print("Install docx2pdf with: pip install docx2pdf")
+            if platform.system() == "Windows":
+                print("Also install: pip install pywin32")
             return None
         except Exception as e:
             print(f"PDF conversion error: {str(e)}")
+            print("Make sure Microsoft Word is installed (Windows) or LibreOffice (Linux/Mac)")
             return None
-    
     def _generate_document(self, resume_data):
         """Core document generation functionality shared by file and stream methods"""
         if isinstance(resume_data, str):
@@ -220,12 +241,20 @@ class DocumentGenerator:
             # Achievements
             for achievement in job['achievements']:
                 achievement = achievement.replace("●", "").strip()
-                doc.add_paragraph(achievement, style='ListBullet')
-
-        # ===== Education =====
+                doc.add_paragraph(achievement, style='ListBullet')        # ===== Education =====
         edu_heading = doc.add_paragraph()
         edu_heading.add_run('Education:').bold = True
         self._add_education(doc, resume_data['education'])
+
+        # ===== Certifications =====
+        if 'certifications' in resume_data and resume_data['certifications']:
+            cert_heading = doc.add_paragraph()
+            cert_heading.add_run('Certifications:').bold = True
+            
+            for cert in resume_data['certifications']:
+                cert_text = str(cert).strip()
+                if cert_text:
+                    doc.add_paragraph(cert_text, style='ListBullet')
         
         return doc
 

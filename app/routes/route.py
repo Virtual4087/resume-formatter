@@ -93,13 +93,22 @@ def register_routes(app):
                     "message": "PDF conversion requires docx2pdf module and Microsoft Word or LibreOffice."
                 }), 500
             
-            # Return the PDF data as a downloadable file with suggested filename
-            response = make_response(pdf_stream.getvalue())
+            # IMPORTANT: Reset stream position to beginning
+            pdf_stream.seek(0)
+            
+            # Get the PDF bytes
+            pdf_bytes = pdf_stream.getvalue()
+            
+            # Create response with proper headers
+            response = make_response(pdf_bytes)
             response.headers['Content-Type'] = 'application/pdf'
             response.headers['Content-Disposition'] = f'attachment; filename="{suggested_filename}"'
+            response.headers['Content-Length'] = len(pdf_bytes)
             
             return response
+            
         except Exception as e:
+            print(f"PDF generation error: {str(e)}")  # Add logging
             return jsonify({"status": "error", "message": str(e)}), 500
 
     @app.route('/download/<filename>', methods=['GET'])

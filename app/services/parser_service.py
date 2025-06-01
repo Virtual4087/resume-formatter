@@ -37,6 +37,10 @@ SCHEMA_TEMPLATE = """{
     "degree": "Degree Earned",
     "graduation_year": "YYYY"
   }
+  "certifications": {
+    "certification_name1",
+    "certification_name2"
+  }
 }"""
 
 RULES = """STRICT CONVERSION RULES:
@@ -61,7 +65,8 @@ RULES = """STRICT CONVERSION RULES:
 7. Use double quotes for all JSON strings
 8. Never add comments or explanations
 9. Maintain consistent date formats (MMM YYYY – MMM YYYY)
-10. Return ONLY valid JSON"""
+10. If there is no certifications, leave the certification field empty.
+11. Return ONLY valid JSON"""
 
 class ResumeParser:
     def __init__(self, api_key=None):
