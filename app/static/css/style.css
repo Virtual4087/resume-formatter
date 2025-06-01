@@ -1,0 +1,52 @@
+/* Custom CSS for Flask Application */
+
+body {
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	background-color: #f8f9fa;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.container {
+	flex: 1;
+}
+
+.card {
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	border: none;
+	border-radius: 10px;
+}
+
+.card-body {
+	padding: 3rem;
+}
+
+.navbar-brand {
+	font-weight: bold;
+	font-size: 1.5rem;
+}
+
+.card-title {
+	color: #343a40;
+	margin-bottom: 1.5rem;
+}
+
+.card-text {
+	color: #6c757d;
+}
+
+footer {
+	margin-top: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.card-body {
+		padding: 2rem 1rem;
+	}
+
+	.container {
+		padding: 0 15px;
+	}
+}
