@@ -114,7 +114,7 @@ class ResumeParser:
         
         try:
             chat = self.client.chats.create(
-                model="gemini-2.0-flash",
+                model="gemini-1.5-flash",
                 config=types.GenerateContentConfig(
                     max_output_tokens=4000,
                     temperature=0.1,
