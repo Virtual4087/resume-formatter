@@ -295,7 +295,8 @@
 				outline: none;
 				border: 1px solid #3498db;
 				background-color: #f0f8ff;
-			}			.editable-note {
+			}
+			.editable-note {
 				background-color: #fff8e1;
 				border-left: 3px solid #ffb300;
 				padding: 8px 12px;
@@ -377,11 +378,19 @@
 						<option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
 						<option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
 					</select>
-					<div class="form-text">
-						<small
-							>Gemini 1.5 Flash: Stable and reliable. Gemini 2.0 Flash: Latest
-							features, may be slower.</small
-						>
+					<div class="form-text text-muted" style="line-height: 1.6">
+						<small>
+							<strong>Gemini 1.5 Flash:</strong> Stable and optimized for
+							reliability.<br />
+							<strong>Gemini 2.0 Flash:</strong> Access to newer features, with
+							potential performance trade-offs.<br />
+							<strong>Gemini 2.5 Flash:</strong> Latest capabilities and
+							reasoning improvements, may be less consistent under high load.<br />
+							<em
+								>If you experience parsing or formatting issues, try switching
+								to a different model version for better results.</em
+							>
+						</small>
 					</div>
 				</div>
 
@@ -450,7 +459,8 @@
 				<div class="preview-header">
 					<h4>Resume Preview</h4>
 					<span class="badge bg-warning">Edit Mode</span>
-				</div>				<div class="editable-note">
+				</div>
+				<div class="editable-note">
 					<i class="fas fa-pencil-alt"></i>
 					<span
 						>You can edit any text by clicking on it. Click the Download button
@@ -462,7 +472,8 @@
 					<div class="row">
 						<div class="col-md-6">
 							<label for="customFilename" class="form-label">
-								<i class="fas fa-file-signature me-2"></i>Custom Filename (optional):
+								<i class="fas fa-file-signature me-2"></i>Custom Filename
+								(optional):
 							</label>
 							<input
 								type="text"
@@ -472,7 +483,10 @@
 								value=""
 							/>
 							<div class="form-text">
-								<small>Leave blank to use your name from the resume. Extensions (.docx/.pdf) will be added automatically.</small>
+								<small
+									>Leave blank to use your name from the resume. Extensions
+									(.docx/.pdf) will be added automatically.</small
+								>
 							</div>
 						</div>
 					</div>
@@ -1696,18 +1710,24 @@
 
 						// For blob response handling
 						return response.blob();
-					})					.then((blob) => {
+					})
+					.then((blob) => {
 						// Create a link element to trigger download
 						const url = window.URL.createObjectURL(blob);
 						const a = document.createElement("a");
 
 						// Get custom filename or generate from user's name
 						let filename;
-						const customFilename = document.getElementById("customFilename").value.trim();
-						
+						const customFilename = document
+							.getElementById("customFilename")
+							.value.trim();
+
 						if (customFilename) {
 							// Use custom filename, remove any existing extensions
-							const cleanCustomName = customFilename.replace(/\.(docx|pdf)$/i, '');
+							const cleanCustomName = customFilename.replace(
+								/\.(docx|pdf)$/i,
+								""
+							);
 							filename = `${cleanCustomName}.${format}`;
 						} else {
 							// Generate filename based on user's name
