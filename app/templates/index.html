@@ -295,8 +295,7 @@
 				outline: none;
 				border: 1px solid #3498db;
 				background-color: #f0f8ff;
-			}
-			.editable-note {
+			}			.editable-note {
 				background-color: #fff8e1;
 				border-left: 3px solid #ffb300;
 				padding: 8px 12px;
@@ -308,6 +307,17 @@
 			.editable-note i {
 				margin-right: 8px;
 				color: #ffb300;
+			}
+			.filename-section {
+				background-color: #f0f8ff;
+				border-left: 3px solid #3498db;
+				padding: 15px;
+				border-radius: 5px;
+				margin: 15px 0;
+			}
+			.filename-section .form-label {
+				font-weight: 600;
+				color: #2c3e50;
 			}
 			.edit-label {
 				position: absolute;
@@ -440,14 +450,32 @@
 				<div class="preview-header">
 					<h4>Resume Preview</h4>
 					<span class="badge bg-warning">Edit Mode</span>
-				</div>
-
-				<div class="editable-note">
+				</div>				<div class="editable-note">
 					<i class="fas fa-pencil-alt"></i>
 					<span
 						>You can edit any text by clicking on it. Click the Download button
 						when you're ready.</span
 					>
+				</div>
+
+				<div class="filename-section mb-3">
+					<div class="row">
+						<div class="col-md-6">
+							<label for="customFilename" class="form-label">
+								<i class="fas fa-file-signature me-2"></i>Custom Filename (optional):
+							</label>
+							<input
+								type="text"
+								id="customFilename"
+								class="form-control"
+								placeholder="Enter filename without extension..."
+								value=""
+							/>
+							<div class="form-text">
+								<small>Leave blank to use your name from the resume. Extensions (.docx/.pdf) will be added automatically.</small>
+							</div>
+						</div>
+					</div>
 				</div>
 
 				<div id="resumePreview">
@@ -1668,17 +1696,26 @@
 
 						// For blob response handling
 						return response.blob();
-					})
-					.then((blob) => {
+					})					.then((blob) => {
 						// Create a link element to trigger download
 						const url = window.URL.createObjectURL(blob);
 						const a = document.createElement("a");
 
-						// Generate a filename based on user's name
-						const cleanName = currentResumeData.contact.name
-							.replace(/[^\w\s]/gi, "")
-							.replace(/\s+/g, "_");
-						const filename = `${cleanName}_Resume.${format}`;
+						// Get custom filename or generate from user's name
+						let filename;
+						const customFilename = document.getElementById("customFilename").value.trim();
+						
+						if (customFilename) {
+							// Use custom filename, remove any existing extensions
+							const cleanCustomName = customFilename.replace(/\.(docx|pdf)$/i, '');
+							filename = `${cleanCustomName}.${format}`;
+						} else {
+							// Generate filename based on user's name
+							const cleanName = currentResumeData.contact.name
+								.replace(/[^\w\s]/gi, "")
+								.replace(/\s+/g, "_");
+							filename = `${cleanName}_Resume.${format}`;
+						}
 
 						a.href = url;
 						a.download = filename;
