@@ -108,8 +108,7 @@ class ResumeParser:
         IMPORTANT: You must preserve the EXACT ORDER of skill categories exactly as they appear in the input text.
         
         Resume Text:
-        {resume_text}
-        """
+        {resume_text}        """
         
         try:
             chat = self.client.chats.create(
@@ -139,20 +138,48 @@ class ResumeParser:
             return parsed
             
         except json.JSONDecodeError as e:
-            print(f"Failed to parse JSON: {e}")
+            print("="*60)
+            print("JSON PARSING ERROR - DETAILED DEBUG INFO")
+            print("="*60)
+            print(f"JSONDecodeError: {e}")
+            print(f"Error at line {e.lineno}, column {e.colno}: {e.msg}")
+            print(f"Model used: {model}")
+            print("\n--- RAW API RESPONSE ---")
+            print(raw_json)
+            print("\n--- CLEANED JSON (that failed to parse) ---")
+            print(cleaned_json)
+            print("="*60)
+            
             try:
                 # Attempt to fix common issues
-                cleaned_json = cleaned_json.replace('\n', '\\n')
-                if '"company": "' in cleaned_json and not cleaned_json.count('"') % 2 == 0:
-                    cleaned_json += '"'
-                parsed = json.loads(cleaned_json)
+                print("Attempting to fix JSON formatting issues...")
+                fixed_json = cleaned_json.replace('\n', '\\n')
+                if '"company": "' in fixed_json and not fixed_json.count('"') % 2 == 0:
+                    fixed_json += '"'
+                    print("Added missing quote at end")
+                
+                parsed = json.loads(fixed_json)
+                print("JSON repair successful!")
                 return parsed
-            except:
-                print("Final repair attempt failed")
-                print("Raw response:", raw_json)
+            except Exception as repair_error:
+                print(f"Final repair attempt failed: {repair_error}")
+                print("--- ATTEMPTED REPAIR JSON ---")
+                print(fixed_json if 'fixed_json' in locals() else "No repair attempted")
                 return None
+                
         except Exception as e:
-            print(f"Error: {str(e)}")
+            print("="*60)
+            print("GENERAL PARSING ERROR - DETAILED DEBUG INFO")
+            print("="*60)
+            print(f"Error Type: {type(e).__name__}")
+            print(f"Error Message: {str(e)}")
+            print(f"Model used: {model}")
+            print(f"Resume text length: {len(resume_text)} characters")
+            print("\n--- RESUME TEXT PREVIEW (first 500 chars) ---")
+            print(resume_text[:500] + "..." if len(resume_text) > 500 else resume_text)
+            print("\n--- RAW API RESPONSE ---")
+            print(raw_json if 'raw_json' in locals() else "No response received")
+            print("="*60)
             return None
 
 # Command line interface for direct usage

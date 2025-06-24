@@ -229,8 +229,46 @@
 				color: #dc3545;
 				cursor: pointer;
 				font-size: 12px;
+			}			.delete-certification-btn:hover {
+				color: #c82333;
 			}
-			.delete-certification-btn:hover {
+			.education-list {
+				margin: 10px 0;
+			}
+			.education-list .education-entry {
+				margin: 15px 0;
+				padding: 15px;
+				border: 1px solid #e0e0e0;
+				border-radius: 8px;
+				background-color: #f9f9f9;
+				position: relative;
+			}
+			.education-controls {
+				margin-top: 10px;
+			}
+			.education-item {
+				position: relative;
+			}
+			.delete-education-btn {
+				color: #dc3545;
+				cursor: pointer;
+				position: absolute;
+				top: 10px;
+				right: 10px;
+				font-size: 14px;
+			}
+			.delete-education-btn:hover {
+				color: #c82333;
+			}
+			.skills-controls {
+				margin-top: 10px;
+			}
+			.delete-skill-row-btn {
+				color: #dc3545;
+				cursor: pointer;
+				margin-left: 10px;
+			}
+			.delete-skill-row-btn:hover {
 				color: #c82333;
 			}
 			.preview-controls {
@@ -448,12 +486,12 @@
 					</div>
 
 					<div class="preview-section">
-						<h3>Technical Skills:</h3>
-						<table class="skills-table" id="skillsTable">
+						<h3>Technical Skills:</h3>						<table class="skills-table" id="skillsTable">
 							<thead>
 								<tr>
 									<th>Category</th>
 									<th>Skills/Tools</th>
+									<th style="width: 50px;">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -657,9 +695,7 @@
 				document.getElementById("previewTitle").textContent = data.title;
 
 				// Set summary
-				document.getElementById("previewSummary").textContent = data.summary;
-
-				// Set technical skills
+				document.getElementById("previewSummary").textContent = data.summary;				// Set technical skills
 				const skillsTableBody = document.querySelector("#skillsTable tbody");
 				skillsTableBody.innerHTML = "";
 
@@ -669,6 +705,7 @@
 				skillOrder.forEach((category) => {
 					const skills = data.technical_skills[category];
 					const row = document.createElement("tr");
+					row.className = "skill-row";
 
 					const categoryCell = document.createElement("td");
 					categoryCell.className = "editable-container";
@@ -703,8 +740,91 @@
 					skillsCell.appendChild(skillsEditable);
 					row.appendChild(skillsCell);
 
+					// Add delete button cell
+					const actionCell = document.createElement("td");
+					actionCell.style.width = "50px";
+					actionCell.style.textAlign = "center";
+					
+					const deleteBtn = document.createElement("i");
+					deleteBtn.className = "fas fa-times delete-skill-row-btn";
+					deleteBtn.title = "Delete skill category";
+					deleteBtn.onclick = function () {
+						row.remove();
+					};
+					actionCell.appendChild(deleteBtn);
+					row.appendChild(actionCell);
+
 					skillsTableBody.appendChild(row);
 				});
+
+				// Add skills controls after the table
+				const skillsTable = document.querySelector("#skillsTable");
+				let skillsControls = document.querySelector(".skills-controls");
+				if (!skillsControls) {
+					skillsControls = document.createElement("div");
+					skillsControls.className = "skills-controls";
+					skillsTable.parentNode.insertBefore(skillsControls, skillsTable.nextSibling);
+				}
+				skillsControls.innerHTML = "";
+
+				const addSkillRowBtn = document.createElement("button");
+				addSkillRowBtn.type = "button";
+				addSkillRowBtn.className = "btn btn-sm btn-outline-primary";
+				addSkillRowBtn.innerHTML = '<i class="fas fa-plus"></i> Add Skill Category';
+				addSkillRowBtn.onclick = function () {
+					const newRow = document.createElement("tr");
+					newRow.className = "skill-row";
+
+					const newCategoryCell = document.createElement("td");
+					newCategoryCell.className = "editable-container";
+
+					const newCategoryEditLabel = document.createElement("span");
+					newCategoryEditLabel.className = "edit-label";
+					newCategoryEditLabel.textContent = "Edit Category";
+					newCategoryCell.appendChild(newCategoryEditLabel);
+
+					const newCategoryEditable = document.createElement("div");
+					newCategoryEditable.contentEditable = true;
+					newCategoryEditable.className = "skill-category";
+					newCategoryEditable.textContent = "New Category";
+					newCategoryEditable.dataset.originalCategory = "";
+					newCategoryCell.appendChild(newCategoryEditable);
+					newRow.appendChild(newCategoryCell);
+
+					const newSkillsCell = document.createElement("td");
+					newSkillsCell.className = "editable-container";
+
+					const newSkillsEditLabel = document.createElement("span");
+					newSkillsEditLabel.className = "edit-label";
+					newSkillsEditLabel.textContent = "Edit Skills";
+					newSkillsCell.appendChild(newSkillsEditLabel);
+
+					const newSkillsEditable = document.createElement("div");
+					newSkillsEditable.contentEditable = true;
+					newSkillsEditable.className = "skill-list";
+					newSkillsEditable.textContent = "Skill 1, Skill 2, Skill 3";
+					newSkillsCell.appendChild(newSkillsEditable);
+					newRow.appendChild(newSkillsCell);
+
+					// Add delete button cell
+					const newActionCell = document.createElement("td");
+					newActionCell.style.width = "50px";
+					newActionCell.style.textAlign = "center";
+					
+					const newDeleteBtn = document.createElement("i");
+					newDeleteBtn.className = "fas fa-times delete-skill-row-btn";
+					newDeleteBtn.title = "Delete skill category";
+					newDeleteBtn.onclick = function () {
+						newRow.remove();
+					};
+					newActionCell.appendChild(newDeleteBtn);
+					newRow.appendChild(newActionCell);
+
+					skillsTableBody.appendChild(newRow);
+					newCategoryEditable.focus();
+				};
+
+				skillsControls.appendChild(addSkillRowBtn);
 
 				// Set work experience
 				const workExperienceContainer =
@@ -874,88 +994,219 @@
 					jobDiv.appendChild(achievementsList);
 					jobDiv.appendChild(achievementControls);
 					workExperienceContainer.appendChild(jobDiv);
+				});				// Set education
+				const educationContainer = document.getElementById("education");
+				educationContainer.innerHTML = "";
+
+				// Create education list container
+				const educationList = document.createElement("div");
+				educationList.className = "education-list";
+
+				// Handle education as array or single object
+				const educationEntries = Array.isArray(data.education) 
+					? data.education 
+					: data.education ? [data.education] : [];
+
+				educationEntries.forEach((education, index) => {
+					const eduDiv = document.createElement("div");
+					eduDiv.className = "education-entry education-item";
+					eduDiv.dataset.index = index;
+
+					// Add delete button
+					const deleteBtn = document.createElement("i");
+					deleteBtn.className = "fas fa-times delete-education-btn";
+					deleteBtn.title = "Delete education entry";
+					deleteBtn.onclick = function () {
+						eduDiv.remove();
+					};
+					eduDiv.appendChild(deleteBtn);
+
+					// Institution and location
+					const institutionRow = document.createElement("div");
+					institutionRow.className = "company-role";
+
+					const institutionDiv = document.createElement("div");
+					institutionDiv.className = "company editable-container";
+
+					const institutionEditLabel = document.createElement("span");
+					institutionEditLabel.className = "edit-label";
+					institutionEditLabel.textContent = "Edit Institution";
+					institutionDiv.appendChild(institutionEditLabel);
+
+					const institutionEditable = document.createElement("span");
+					institutionEditable.contentEditable = true;
+					institutionEditable.className = "education-institution";
+					institutionEditable.textContent = education.institution || "";
+					institutionDiv.appendChild(institutionEditable);
+
+					const eduLocationDiv = document.createElement("div");
+					eduLocationDiv.className = "location editable-container";
+
+					const eduLocationEditLabel = document.createElement("span");
+					eduLocationEditLabel.className = "edit-label";
+					eduLocationEditLabel.textContent = "Edit Location";
+					eduLocationDiv.appendChild(eduLocationEditLabel);
+
+					const eduLocationEditable = document.createElement("span");
+					eduLocationEditable.contentEditable = true;
+					eduLocationEditable.className = "education-location";
+					eduLocationEditable.textContent = education.location || "";
+					eduLocationDiv.appendChild(eduLocationEditable);
+
+					institutionRow.appendChild(institutionDiv);
+					institutionRow.appendChild(eduLocationDiv);
+					eduDiv.appendChild(institutionRow);
+
+					// Degree and graduation year
+					const degreeRow = document.createElement("div");
+					degreeRow.className = "company-role";
+
+					const degreeDiv = document.createElement("div");
+					degreeDiv.className = "role editable-container";
+
+					const degreeEditLabel = document.createElement("span");
+					degreeEditLabel.className = "edit-label";
+					degreeEditLabel.textContent = "Edit Degree";
+					degreeDiv.appendChild(degreeEditLabel);
+
+					const degreeEditable = document.createElement("span");
+					degreeEditable.contentEditable = true;
+					degreeEditable.className = "education-degree";
+					degreeEditable.textContent = education.degree || "";
+					degreeDiv.appendChild(degreeEditable);
+
+					const gradYearDiv = document.createElement("div");
+					gradYearDiv.className = "dates editable-container";
+
+					const gradYearEditLabel = document.createElement("span");
+					gradYearEditLabel.className = "edit-label";
+					gradYearEditLabel.textContent = "Edit Graduation Year";
+					gradYearDiv.appendChild(gradYearEditLabel);
+
+					const gradYearEditable = document.createElement("span");
+					gradYearEditable.contentEditable = true;
+					gradYearEditable.className = "education-graduation";
+					gradYearEditable.textContent = education.graduation_year 
+						? `Graduation: ${education.graduation_year}` 
+						: "Graduation: ";
+					gradYearDiv.appendChild(gradYearEditable);
+
+					degreeRow.appendChild(degreeDiv);
+					degreeRow.appendChild(gradYearDiv);
+					eduDiv.appendChild(degreeRow);
+
+					educationList.appendChild(eduDiv);
 				});
 
-				// Set education
-				const educationContainer = document.getElementById("education");
-				const education = data.education;
+				// Add education controls
+				const educationControls = document.createElement("div");
+				educationControls.className = "education-controls";
 
-				const eduDiv = document.createElement("div");
-				eduDiv.className = "education-entry";
+				const addEducationBtn = document.createElement("button");
+				addEducationBtn.type = "button";
+				addEducationBtn.className = "btn btn-sm btn-outline-primary";
+				addEducationBtn.innerHTML = '<i class="fas fa-plus"></i> Add Education';
+				addEducationBtn.onclick = function () {
+					const newEduDiv = document.createElement("div");
+					newEduDiv.className = "education-entry education-item";
+					newEduDiv.dataset.index = "new";
 
-				// Institution and location
-				const institutionRow = document.createElement("div");
-				institutionRow.className = "company-role";
+					// Add delete button
+					const newDeleteBtn = document.createElement("i");
+					newDeleteBtn.className = "fas fa-times delete-education-btn";
+					newDeleteBtn.title = "Delete education entry";
+					newDeleteBtn.onclick = function () {
+						newEduDiv.remove();
+					};
+					newEduDiv.appendChild(newDeleteBtn);
 
-				const institutionDiv = document.createElement("div");
-				institutionDiv.className = "company editable-container";
+					// Institution and location
+					const newInstitutionRow = document.createElement("div");
+					newInstitutionRow.className = "company-role";
 
-				const institutionEditLabel = document.createElement("span");
-				institutionEditLabel.className = "edit-label";
-				institutionEditLabel.textContent = "Edit Institution";
-				institutionDiv.appendChild(institutionEditLabel);
+					const newInstitutionDiv = document.createElement("div");
+					newInstitutionDiv.className = "company editable-container";
 
-				const institutionEditable = document.createElement("span");
-				institutionEditable.contentEditable = true;
-				institutionEditable.className = "education-institution";
-				institutionEditable.textContent = education.institution;
-				institutionDiv.appendChild(institutionEditable);
+					const newInstitutionEditLabel = document.createElement("span");
+					newInstitutionEditLabel.className = "edit-label";
+					newInstitutionEditLabel.textContent = "Edit Institution";
+					newInstitutionDiv.appendChild(newInstitutionEditLabel);
 
-				const eduLocationDiv = document.createElement("div");
-				eduLocationDiv.className = "location editable-container";
+					const newInstitutionEditable = document.createElement("span");
+					newInstitutionEditable.contentEditable = true;
+					newInstitutionEditable.className = "education-institution";
+					newInstitutionEditable.textContent = "New Institution";
+					newInstitutionDiv.appendChild(newInstitutionEditable);
 
-				const eduLocationEditLabel = document.createElement("span");
-				eduLocationEditLabel.className = "edit-label";
-				eduLocationEditLabel.textContent = "Edit Location";
-				eduLocationDiv.appendChild(eduLocationEditLabel);
+					const newEduLocationDiv = document.createElement("div");
+					newEduLocationDiv.className = "location editable-container";
 
-				const eduLocationEditable = document.createElement("span");
-				eduLocationEditable.contentEditable = true;
-				eduLocationEditable.className = "education-location";
-				eduLocationEditable.textContent = education.location;
-				eduLocationDiv.appendChild(eduLocationEditable);
+					const newEduLocationEditLabel = document.createElement("span");
+					newEduLocationEditLabel.className = "edit-label";
+					newEduLocationEditLabel.textContent = "Edit Location";
+					newEduLocationDiv.appendChild(newEduLocationEditLabel);
 
-				institutionRow.appendChild(institutionDiv);
-				institutionRow.appendChild(eduLocationDiv);
-				eduDiv.appendChild(institutionRow);
+					const newEduLocationEditable = document.createElement("span");
+					newEduLocationEditable.contentEditable = true;
+					newEduLocationEditable.className = "education-location";
+					newEduLocationEditable.textContent = "Location";
+					newEduLocationDiv.appendChild(newEduLocationEditable);
 
-				// Degree and graduation year
-				const degreeRow = document.createElement("div");
-				degreeRow.className = "company-role";
+					newInstitutionRow.appendChild(newInstitutionDiv);
+					newInstitutionRow.appendChild(newEduLocationDiv);
+					newEduDiv.appendChild(newInstitutionRow);
 
-				const degreeDiv = document.createElement("div");
-				degreeDiv.className = "role editable-container";
+					// Degree and graduation year
+					const newDegreeRow = document.createElement("div");
+					newDegreeRow.className = "company-role";
 
-				const degreeEditLabel = document.createElement("span");
-				degreeEditLabel.className = "edit-label";
-				degreeEditLabel.textContent = "Edit Degree";
-				degreeDiv.appendChild(degreeEditLabel);
+					const newDegreeDiv = document.createElement("div");
+					newDegreeDiv.className = "role editable-container";
 
-				const degreeEditable = document.createElement("span");
-				degreeEditable.contentEditable = true;
-				degreeEditable.className = "education-degree";
-				degreeEditable.textContent = education.degree;
-				degreeDiv.appendChild(degreeEditable);
+					const newDegreeEditLabel = document.createElement("span");
+					newDegreeEditLabel.className = "edit-label";
+					newDegreeEditLabel.textContent = "Edit Degree";
+					newDegreeDiv.appendChild(newDegreeEditLabel);
 
-				const gradYearDiv = document.createElement("div");
-				gradYearDiv.className = "dates editable-container";
+					const newDegreeEditable = document.createElement("span");
+					newDegreeEditable.contentEditable = true;
+					newDegreeEditable.className = "education-degree";
+					newDegreeEditable.textContent = "Bachelor's Degree";
+					newDegreeDiv.appendChild(newDegreeEditable);
 
-				const gradYearEditLabel = document.createElement("span");
-				gradYearEditLabel.className = "edit-label";
-				gradYearEditLabel.textContent = "Edit Graduation Year";
-				gradYearDiv.appendChild(gradYearEditLabel);
+					const newGradYearDiv = document.createElement("div");
+					newGradYearDiv.className = "dates editable-container";
 
-				const gradYearEditable = document.createElement("span");
-				gradYearEditable.contentEditable = true;
-				gradYearEditable.className = "education-graduation";
-				gradYearEditable.textContent = `Graduation: ${education.graduation_year}`;
-				gradYearDiv.appendChild(gradYearEditable);
+					const newGradYearEditLabel = document.createElement("span");
+					newGradYearEditLabel.className = "edit-label";
+					newGradYearEditLabel.textContent = "Edit Graduation Year";
+					newGradYearDiv.appendChild(newGradYearEditLabel);
 
-				degreeRow.appendChild(degreeDiv);
-				degreeRow.appendChild(gradYearDiv);
-				eduDiv.appendChild(degreeRow);
-				educationContainer.innerHTML = "";
-				educationContainer.appendChild(eduDiv);
+					const newGradYearEditable = document.createElement("span");
+					newGradYearEditable.contentEditable = true;
+					newGradYearEditable.className = "education-graduation";
+					newGradYearEditable.textContent = "Graduation: 2024";
+					newGradYearDiv.appendChild(newGradYearEditable);
+
+					newDegreeRow.appendChild(newDegreeDiv);
+					newDegreeRow.appendChild(newGradYearDiv);
+					newEduDiv.appendChild(newDegreeRow);
+
+					educationList.appendChild(newEduDiv);
+					newInstitutionEditable.focus();
+				};
+
+				educationControls.appendChild(addEducationBtn);
+				educationContainer.appendChild(educationList);
+				educationContainer.appendChild(educationControls);
+
+				// If no education entries exist, add default message
+				if (educationEntries.length === 0) {
+					const noEducationMessage = document.createElement("p");
+					noEducationMessage.textContent = "No education entries added yet.";
+					noEducationMessage.className = "text-muted";
+					educationList.appendChild(noEducationMessage);
+				}
 
 				// Set certifications
 				const certificationsContainer =
@@ -1271,34 +1522,58 @@
 						dates: dates,
 						achievements: achievements,
 					});
-				});
-
-				currentResumeData.work_experience = updatedWorkExperience;
+				});				currentResumeData.work_experience = updatedWorkExperience;
 
 				// Collect education changes
-				const educationEntry = document.querySelector(".education-entry");
-				const institution = educationEntry.querySelector(
-					".education-institution"
-				).textContent;
-				const eduLocation = educationEntry.querySelector(
-					".education-location"
-				).textContent;
-				const degree =
-					educationEntry.querySelector(".education-degree").textContent;
-				let gradYear = educationEntry.querySelector(
-					".education-graduation"
-				).textContent;
+				const updatedEducation = [];
+				const educationEntries = document.querySelectorAll(".education-entry");
 
-				// Extract just the year from "Graduation: YYYY"
-				if (gradYear.includes(":")) {
-					gradYear = gradYear.split(":")[1].trim();
-				}
-				currentResumeData.education = {
-					institution: institution,
-					location: eduLocation,
-					degree: degree,
-					graduation_year: gradYear,
-				};
+				educationEntries.forEach((eduEntry) => {
+					const institution = eduEntry.querySelector(".education-institution").textContent.trim();
+					const eduLocation = eduEntry.querySelector(".education-location").textContent.trim();
+					const degree = eduEntry.querySelector(".education-degree").textContent.trim();
+					let gradYear = eduEntry.querySelector(".education-graduation").textContent.trim();
+
+					// Extract just the year from "Graduation: YYYY"
+					if (gradYear.includes(":")) {
+						gradYear = gradYear.split(":")[1].trim();
+					}
+
+					// Only add if not default values
+					if (institution && institution !== "New Institution" && 
+						degree && degree !== "Bachelor's Degree") {
+						updatedEducation.push({
+							institution: institution,
+							location: eduLocation,
+							degree: degree,
+							graduation_year: gradYear,
+						});
+					}
+				});				currentResumeData.education = updatedEducation;
+
+				// Collect skills changes
+				const updatedTechnicalSkills = {};
+				const editableSkillRows = document.querySelectorAll(".skill-row");
+
+				editableSkillRows.forEach((row) => {
+					const categoryElement = row.querySelector(".skill-category");
+					const skillsElement = row.querySelector(".skill-list");
+					
+					if (categoryElement && skillsElement) {
+						const category = categoryElement.textContent.trim();
+						const skillsText = skillsElement.textContent.trim();
+						
+						// Only add if not default values
+						if (category && category !== "New Category" && 
+							skillsText && skillsText !== "Skill 1, Skill 2, Skill 3") {
+							// Convert skills string to array
+							const skillsArray = skillsText.split(",").map(skill => skill.trim()).filter(skill => skill);
+							updatedTechnicalSkills[category] = skillsArray;
+						}
+					}
+				});
+
+				currentResumeData.technical_skills = updatedTechnicalSkills;
 
 				// Collect certifications changes
 				const updatedCertifications = [];

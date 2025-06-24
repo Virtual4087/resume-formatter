@@ -23,8 +23,7 @@ class DocumentGenerator:
     def create_resume_document_stream(self, resume_data):
         """Generate a resume document and return as in-memory BytesIO stream"""
         doc = self._generate_document(resume_data)
-        
-        # Save to an in-memory file-like object
+          # Save to an in-memory file-like object
         output_stream = BytesIO()
         doc.save(output_stream)
         output_stream.seek(0) # Reset pointer to beginning of stream
@@ -89,25 +88,73 @@ class DocumentGenerator:
             return pdf_stream
             
         except ImportError as e:
-            print(f"Missing dependency: {str(e)}")
-            print("Install docx2pdf with: pip install docx2pdf")
+            print("="*60)
+            print("PDF GENERATION ERROR - MISSING DEPENDENCY")
+            print("="*60)
+            print(f"ImportError: {str(e)}")
+            print("Required packages not installed. Install with:")
+            print("  pip install docx2pdf")
             if platform.system() == "Windows":
-                print("Also install: pip install pywin32")
+                print("  pip install pywin32")
+            print("="*60)
             return None
         except Exception as e:
-            print(f"PDF conversion error: {str(e)}")
-            print("Make sure Microsoft Word is installed (Windows) or LibreOffice (Linux/Mac)")
+            print("="*60)
+            print("PDF GENERATION ERROR - DETAILED DEBUG INFO")
+            print("="*60)
+            print(f"Error Type: {type(e).__name__}")
+            print(f"Error Message: {str(e)}")
+            print(f"Platform: {platform.system()}")
+            print("Requirements:")
+            print("- Microsoft Word (Windows) or LibreOffice (Linux/Mac)")
+            print("- docx2pdf Python package")
+            if platform.system() == "Windows":
+                print("- pywin32 package")
+            print("="*60)
             return None
+            
     def _generate_document(self, resume_data):
         """Core document generation functionality shared by file and stream methods"""
+
         if isinstance(resume_data, str):
             try:
                 resume_data = json.loads(resume_data)
             except json.JSONDecodeError as e:
+                print("="*60)
+                print("DOCUMENT GENERATION ERROR - INVALID JSON")
+                print("="*60)
+                print(f"JSONDecodeError: {str(e)}")
+                print("Raw data preview:")
+                print(resume_data[:500] + "..." if len(resume_data) > 500 else resume_data)
+                print("="*60)
                 raise ValueError(f"Invalid JSON string: {str(e)}") from e
+                
+        # Validate required sections
+        required_sections = ['contact', 'summary', 'technical_skills', 'work_experience', 'education']
+        missing_sections = []
+        for section in required_sections:
+            if section not in resume_data:
+                missing_sections.append(section)
             
-        if 'contact' not in resume_data or not isinstance(resume_data['contact'], dict):
-            raise ValueError("Missing or invalid contact information")
+        if missing_sections:
+            print("="*60)
+            print("DOCUMENT GENERATION ERROR - MISSING SECTIONS")
+            print("="*60)
+            print(f"Missing sections: {', '.join(missing_sections)}")
+            print("Required sections:", required_sections)
+            print("Available sections:", list(resume_data.keys()) if isinstance(resume_data, dict) else "Invalid data type")
+            print("="*60)
+            raise ValueError(f"Missing required sections: {', '.join(missing_sections)}")
+            
+        if not isinstance(resume_data['contact'], dict):
+            print("="*60)
+            print("DOCUMENT GENERATION ERROR - INVALID CONTACT DATA")
+            print("="*60)
+            print("Contact data must be a dictionary")
+            print(f"Received type: {type(resume_data['contact'])}")
+            print(f"Contact data: {resume_data['contact']}")
+            print("="*60)
+            raise ValueError("Contact information must be a dictionary")
         
         # Create a new Document
         doc = Document()
@@ -239,14 +286,15 @@ class DocumentGenerator:
             self._add_work_experience(doc, job)
             
             # Achievements
-            for achievement in job['achievements']:
+            for achievement in job['achievements']:                
                 achievement = achievement.replace("●", "").strip()
-                doc.add_paragraph(achievement, style='ListBullet')        # ===== Education =====
+                doc.add_paragraph(achievement, style='ListBullet')
+        
+        # ===== Education =====
         edu_heading = doc.add_paragraph()
-        edu_heading.add_run('Education:').bold = True
+        edu_heading.add_run('Education:').bold = True        
         self._add_education(doc, resume_data['education'])
-
-        # ===== Certifications =====
+          # ===== Certifications =====
         if 'certifications' in resume_data and resume_data['certifications']:
             cert_heading = doc.add_paragraph()
             cert_heading.add_run('Certifications:').bold = True
@@ -328,60 +376,73 @@ class DocumentGenerator:
 
     def _add_education(self, doc, education):
         """Add education section to document"""
-        # Create a 1-row, 2-column table
-        table = doc.add_table(rows=2, cols=2)
-
-        # Left cell (institution and degree)
-        left_top = table.cell(0, 0)
-        left_p = left_top.paragraphs[0]
-        left_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        left_p.paragraph_format.space_after = Pt(0)  # Remove space after
-        left_run_institution = left_p.add_run(education['institution'])
-        left_run_institution.italic = True
-        left_run_institution.bold = True
-
-        left_bottom = table.cell(1, 0)
-        left_bottom.width = Inches(5)  # Set width for left cell
-        left_p = left_bottom.paragraphs[0]
-        left_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        left_p.paragraph_format.space_after = Pt(0)  # Remove space after
+        # Handle both single education object and array of education entries
+        education_entries = education if isinstance(education, list) else [education]
         
-        # Fix apostrophe character encoding issues
-        degree_text = education['degree']
-        degree_text = degree_text.replace('â', "'").replace('â', "'").replace('\u00e2', "'")
-        
-        left_run_degree = left_p.add_run(degree_text)
-        left_run_degree.italic = True
-        
-        # Right cell (Location and Grad year)
-        right_top = table.cell(0, 1)
-        right_p = right_top.paragraphs[0]
-        right_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        right_p.paragraph_format.space_after = Pt(0)  # Remove space after
-        right_run_location = right_p.add_run(education['location'])
-        right_run_location.bold = True
-        right_run_location.italic = True
+        for edu_entry in education_entries:
+            # Skip empty or invalid entries
+            if not edu_entry or not isinstance(edu_entry, dict):
+                continue
+                
+            # Create a 1-row, 2-column table for each education entry
+            table = doc.add_table(rows=2, cols=2)
 
-        right_bottom = table.cell(1, 1)
-        right_p = right_bottom.paragraphs[0]
-        right_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        right_p.paragraph_format.space_after = Pt(0)  # Remove space after
-        dates = education['graduation_year'].replace('\u00e2', '-').replace('  ', ' ')
-        right_run_dates = right_p.add_run(f"Graduation: {dates}")
-        right_run_dates.italic = True
+            # Left cell (institution and degree)
+            left_top = table.cell(0, 0)
+            left_p = left_top.paragraphs[0]
+            left_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            left_p.paragraph_format.space_after = Pt(0)  # Remove space after
+            left_run_institution = left_p.add_run(edu_entry.get('institution', ''))
+            left_run_institution.italic = True
+            left_run_institution.bold = True
 
-        # Remove table borders
-        tbl = table._tbl
-        tblPr = tbl.tblPr
-        tblBorders = OxmlElement('w:tblBorders')
-        for border_name in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
-            border = OxmlElement(f'w:{border_name}')
-            border.set(qn('w:val'), 'none')
-            border.set(qn('w:sz'), '0')
-            border.set(qn('w:space'), '0')
-            border.set(qn('w:color'), 'auto')
-            tblBorders.append(border)
-        tblPr.append(tblBorders)
+            left_bottom = table.cell(1, 0)
+            left_bottom.width = Inches(5)  # Set width for left cell
+            left_p = left_bottom.paragraphs[0]
+            left_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            left_p.paragraph_format.space_after = Pt(0)  # Remove space after
+            
+            # Fix apostrophe character encoding issues
+            degree_text = edu_entry.get('degree', '')
+            degree_text = degree_text.replace('â', "'").replace('â', "'").replace('\u00e2', "'")
+            
+            left_run_degree = left_p.add_run(degree_text)
+            left_run_degree.italic = True
+            
+            # Right cell (Location and Grad year)
+            right_top = table.cell(0, 1)
+            right_p = right_top.paragraphs[0]
+            right_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            right_p.paragraph_format.space_after = Pt(0)  # Remove space after
+            right_run_location = right_p.add_run(edu_entry.get('location', ''))
+            right_run_location.bold = True
+            right_run_location.italic = True
+
+            right_bottom = table.cell(1, 1)
+            right_p = right_bottom.paragraphs[0]
+            right_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            right_p.paragraph_format.space_after = Pt(0)  # Remove space after
+            graduation_year = edu_entry.get('graduation_year', '')
+            dates = str(graduation_year).replace('\u00e2', '-').replace('  ', ' ')
+            right_run_dates = right_p.add_run(f"Graduation: {dates}")
+            right_run_dates.italic = True
+
+            # Remove table borders
+            tbl = table._tbl
+            tblPr = tbl.tblPr
+            tblBorders = OxmlElement('w:tblBorders')
+            for border_name in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
+                border = OxmlElement(f'w:{border_name}')
+                border.set(qn('w:val'), 'none')
+                border.set(qn('w:sz'), '0')
+                border.set(qn('w:space'), '0')
+                border.set(qn('w:color'), 'auto')
+                tblBorders.append(border)
+            tblPr.append(tblBorders)
+            
+            # Add spacing between multiple education entries
+            if len(education_entries) > 1:
+                doc.add_paragraph("")  # Add a small gap between entries
 
     def _add_section_separator(self, doc):
         """Add space between sections"""

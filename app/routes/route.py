@@ -42,9 +42,24 @@ def register_routes(app):
                     "model_used": selected_model  # Include the model that was used
                 })
             else:
-                return jsonify({"status": "error", "message": "Failed to parse resume."}), 500
+                print("="*60)
+                print("ROUTE ERROR - PARSER RETURNED NONE")
+                print("="*60)
+                print(f"Model used: {selected_model}")
+                print(f"Resume text length: {len(resume_text)} characters")
+                print("Parser returned None - check console for detailed parsing errors above")
+                print("="*60)
+                return jsonify({"status": "error", "message": "Failed to parse resume. Check console for detailed error information."}), 500
         except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
+            print("="*60)
+            print("ROUTE ERROR - UNEXPECTED ERROR IN SUBMIT")
+            print("="*60)
+            print(f"Error Type: {type(e).__name__}")
+            print(f"Error Message: {str(e)}")
+            print(f"Model selected: {selected_model}")
+            print(f"Resume text length: {len(resume_text)} characters")
+            print("="*60)
+            return jsonify({"status": "error", "message": f"Server error: {str(e)}"}), 500
 
     @app.route('/generate', methods=['POST'])
     def generate_document():
