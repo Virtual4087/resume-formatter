@@ -64,6 +64,22 @@
 				font-weight: 600;
 				color: #34495e;
 			}
+			.model-selection {
+				background-color: #f8f9ff;
+				border: 1px solid #e1e5f0;
+				border-radius: 8px;
+				padding: 15px;
+				margin-bottom: 20px;
+			}
+			.model-badge {
+				display: inline-block;
+				padding: 4px 8px;
+				background-color: #007bff;
+				color: white;
+				border-radius: 4px;
+				font-size: 0.85rem;
+				margin-left: 10px;
+			}
 			.features {
 				margin: 20px 0;
 				padding: 15px;
@@ -303,6 +319,22 @@
 			</div>
 
 			<form id="resumeForm">
+				<div class="model-selection">
+					<label for="aiModel" class="form-label">
+						<i class="fas fa-robot me-2"></i>AI Model:
+					</label>
+					<select id="aiModel" name="aiModel" class="form-select">
+						<option value="gemini-1.5-flash" selected>Gemini 1.5 Flash</option>
+						<option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+					</select>
+					<div class="form-text">
+						<small
+							>Gemini 1.5 Flash: Stable and reliable. Gemini 2.0 Flash: Latest
+							features, may be slower.</small
+						>
+					</div>
+				</div>
+
 				<div class="mb-4">
 					<label for="resume" class="form-label"
 						>Paste your resume text below:</label
@@ -354,12 +386,12 @@
 				<i class="fas fa-exclamation-triangle me-2"></i>
 				<span id="errorMessage">Error processing your resume.</span>
 			</div>
-
 			<div id="resultArea">
 				<h4><i class="fas fa-check-circle me-2"></i>Success!</h4>
 				<p>
-					Your resume has been processed. You can now preview and edit it below
-					before downloading.
+					Your resume has been processed using
+					<span id="modelUsed" class="model-badge"></span>. You can now preview
+					and edit it below before downloading.
 				</p>
 			</div>
 
@@ -550,10 +582,9 @@
 					// Hide previous alerts/results
 					document.getElementById("errorAlert").style.display = "none";
 					document.getElementById("resultArea").style.display = "none";
-					document.getElementById("previewContainer").style.display = "none";
-
-					// Get form data
+					document.getElementById("previewContainer").style.display = "none"; // Get form data
 					const resumeText = document.getElementById("resume").value;
+					const selectedModel = document.getElementById("aiModel").value;
 
 					// Submit form using fetch API
 					fetch("/submit", {
@@ -561,7 +592,11 @@
 						headers: {
 							"Content-Type": "application/x-www-form-urlencoded",
 						},
-						body: "resume=" + encodeURIComponent(resumeText),
+						body:
+							"resume=" +
+							encodeURIComponent(resumeText) +
+							"&aiModel=" +
+							encodeURIComponent(selectedModel),
 					})
 						.then((response) => {
 							if (!response.ok) {
@@ -573,9 +608,7 @@
 							// Store the original data
 							console.log("API response:", data);
 							originalResumeData = JSON.parse(JSON.stringify(data.data));
-							currentResumeData = JSON.parse(JSON.stringify(data.data));
-
-							// Store the skill category order
+							currentResumeData = JSON.parse(JSON.stringify(data.data)); // Store the skill category order
 							if (data.skill_order) {
 								originalResumeData.skill_order = data.skill_order;
 								currentResumeData.skill_order = data.skill_order;
@@ -583,6 +616,12 @@
 
 							// Hide spinner
 							document.getElementById("loadingSpinner").style.display = "none";
+
+							// Show model used in success message
+							if (data.model_used) {
+								document.getElementById("modelUsed").textContent =
+									data.model_used;
+							}
 
 							// Show success message
 							document.getElementById("resultArea").style.display = "block";

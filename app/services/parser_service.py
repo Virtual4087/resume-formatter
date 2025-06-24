@@ -91,14 +91,13 @@ class ResumeParser:
         
         # Remove trailing commas
         text = re.sub(r',(\s*[]}])', r'\1', text)
-        
-        # Ensure single root object
+          # Ensure single root object
         if text.count('{') - text.count('}') == 1:
             text += '}'
         
         return text.strip()
 
-    def parse_resume(self, resume_text):
+    def parse_resume(self, resume_text, model="gemini-1.5-flash"):
         """Parse resume text using Google Gemini API"""
         prompt = f"""
         Convert this resume to JSON following this structure:
@@ -114,7 +113,7 @@ class ResumeParser:
         
         try:
             chat = self.client.chats.create(
-                model="gemini-2.0-flash",
+                model=model,
                 config=types.GenerateContentConfig(
                     max_output_tokens=4000,
                     temperature=0.1,
@@ -169,9 +168,7 @@ def cli_interface():
     # Validate if the resume text is not empty
     if not resume.strip():
         print("Error: Resume text cannot be empty.")
-        return
-
-    # Proceed with parsing the pasted resume text
+        return    # Proceed with parsing the pasted resume text (using default model)
     parsed_resume = parser.parse_resume(resume)
     if parsed_resume:
         output = json.dumps(parsed_resume, indent=2)

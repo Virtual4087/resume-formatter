@@ -18,6 +18,8 @@ def register_routes(app):
     def submit():
         """Process the submitted resume"""
         resume_text = request.form.get('resume')
+        selected_model = request.form.get('aiModel', 'gemini-1.5-flash')  # Default to gemini-1.5-flash
+        
         if not resume_text or not resume_text.strip():
             return "Error: Resume text cannot be empty.", 400
 
@@ -26,7 +28,7 @@ def register_routes(app):
             api_key = current_app.config.get('GEMINI_API_KEY')
             parser = ResumeParser(api_key)
             
-            parsed_resume = parser.parse_resume(resume_text)
+            parsed_resume = parser.parse_resume(resume_text, model=selected_model)
             if parsed_resume:
                 # Extract skill categories in their original order
                 skill_order = list(parsed_resume['technical_skills'].keys())
@@ -36,7 +38,8 @@ def register_routes(app):
                     "status": "success", 
                     "message": "Resume successfully processed.",
                     "data": parsed_resume,
-                    "skill_order": skill_order  # Include original skill category order
+                    "skill_order": skill_order,  # Include original skill category order
+                    "model_used": selected_model  # Include the model that was used
                 })
             else:
                 return jsonify({"status": "error", "message": "Failed to parse resume."}), 500
