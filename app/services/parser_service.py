@@ -69,16 +69,20 @@ RULES = """STRICT CONVERSION RULES:
 11. Return ONLY valid JSON"""
 
 class ResumeParser:
-    def __init__(self, api_key=None):
-        """Initialize the ResumeParser with Google Gemini API key"""
-        # Use API key from config if not provided directly
-        if not api_key:
-            if current_app and current_app.config.get('GEMINI_API_KEY'):
-                api_key = current_app.config.get('GEMINI_API_KEY')
-            else:
-                raise ValueError("Gemini API key not provided and not found in application config")
-                
-        self.client = genai.Client(api_key=api_key)
+    def __init__(self, api_keys=None):
+        """Initialize the ResumeParser with a list of Google Gemini API keys"""
+        # Accept a list of API keys, or get from config/env
+        if api_keys is None:
+            api_keys = []
+            if current_app and current_app.config.get('GEMINI_API_KEYS'):
+                api_keys = current_app.config.get('GEMINI_API_KEYS')
+            elif os.getenv('GEMINI_API_KEYS'):
+                api_keys = os.getenv('GEMINI_API_KEYS').split(',')
+            elif os.getenv('GEMINI_API_KEY'):
+                api_keys = [os.getenv('GEMINI_API_KEY')]
+        if not api_keys:
+            raise ValueError("No Gemini API keys provided or found in config/env")
+        self.api_keys = api_keys
 
     def clean_json_response(self, text):
         """Enhanced cleaning with Unicode handling"""
@@ -181,6 +185,48 @@ class ResumeParser:
             print(raw_json if 'raw_json' in locals() else "No response received")
             print("="*60)
             return None
+
+    def parse_resume_with_progress(self, resume_text, model="gemini-1.5-flash"):
+        """Generator that yields progress messages and the final result or error."""
+        prompt = f"""
+        Convert this resume to JSON following this structure:
+        {SCHEMA_TEMPLATE}
+        
+        {RULES}
+        
+        IMPORTANT: You must preserve the EXACT ORDER of skill categories exactly as they appear in the input text.
+        
+        Resume Text:
+        {resume_text}        """
+        last_error = None
+        for idx, api_key in enumerate(self.api_keys):
+            yield {"status": f"Using API key {idx+1}/{len(self.api_keys)}..."}
+            try:
+                client = genai.Client(api_key=api_key)
+                chat = client.chats.create(
+                    model=model,
+                    config=types.GenerateContentConfig(
+                        max_output_tokens=8000,
+                        temperature=0.1,
+                        response_mime_type="application/json",
+                    )
+                )
+                response = chat.send_message(prompt)
+                raw_json = response.text
+                cleaned_json = self.clean_json_response(raw_json)
+                parsed = json.loads(cleaned_json)
+                required_sections = ['contact', 'summary', 'technical_skills', 'work_experience', 'education']
+                for section in required_sections:
+                    if section not in parsed:
+                        raise ValueError(f"Missing section: {section}")
+                yield {"status": "success", "result": parsed}
+                return
+            except Exception as e:
+                last_error = str(e)
+                yield {"status": f"API key {idx+1} failed: {last_error}"}
+                if idx < len(self.api_keys) - 1:
+                    yield {"status": f"Switching to next API key..."}
+        yield {"status": f"All API keys failed. Parsing failed. Last error: {last_error}", "error": True}
 
 # Command line interface for direct usage
 def cli_interface():

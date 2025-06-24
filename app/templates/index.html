@@ -229,7 +229,8 @@
 				color: #dc3545;
 				cursor: pointer;
 				font-size: 12px;
-			}			.delete-certification-btn:hover {
+			}
+			.delete-certification-btn:hover {
 				color: #c82333;
 			}
 			.education-list {
@@ -365,7 +366,6 @@
 						<option value="gemini-1.5-flash" selected>Gemini 1.5 Flash</option>
 						<option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
 						<option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-
 					</select>
 					<div class="form-text">
 						<small
@@ -488,12 +488,13 @@
 					</div>
 
 					<div class="preview-section">
-						<h3>Technical Skills:</h3>						<table class="skills-table" id="skillsTable">
+						<h3>Technical Skills:</h3>
+						<table class="skills-table" id="skillsTable">
 							<thead>
 								<tr>
 									<th>Category</th>
 									<th>Skills/Tools</th>
-									<th style="width: 50px;">Actions</th>
+									<th style="width: 50px">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -639,14 +640,37 @@
 							encodeURIComponent(selectedModel),
 					})
 						.then((response) => {
-							if (!response.ok) {
-								throw new Error("Failed to process resume. Please try again.");
-							}
-							return response.json();
+							return response.json().then((data) => {
+								if (!response.ok || data.status === "error") {
+									// Log API progress messages to console
+									if (data.progress) {
+										console.log("API Progress:");
+										data.progress.forEach((progress) => {
+											console.log(progress.status);
+										});
+									}
+									// Log the detailed error message
+									console.error("API Error:", data.message);
+									throw new Error(
+										data.message ||
+											"Failed to process resume. Please try again."
+									);
+								}
+								return data;
+							});
 						})
 						.then((data) => {
 							// Store the original data
 							console.log("API response:", data);
+
+							// Log API progress messages to console
+							if (data.progress) {
+								console.log("API Progress:");
+								data.progress.forEach((progress) => {
+									console.log(progress.status);
+								});
+							}
+
 							originalResumeData = JSON.parse(JSON.stringify(data.data));
 							currentResumeData = JSON.parse(JSON.stringify(data.data)); // Store the skill category order
 							if (data.skill_order) {
@@ -678,6 +702,9 @@
 							// Hide spinner
 							document.getElementById("loadingSpinner").style.display = "none";
 
+							// Log the error to console
+							console.error("Frontend Error:", error.message);
+
 							// Show error
 							document.getElementById("errorAlert").style.display = "block";
 							document.getElementById("errorMessage").textContent =
@@ -697,7 +724,7 @@
 				document.getElementById("previewTitle").textContent = data.title;
 
 				// Set summary
-				document.getElementById("previewSummary").textContent = data.summary;				// Set technical skills
+				document.getElementById("previewSummary").textContent = data.summary; // Set technical skills
 				const skillsTableBody = document.querySelector("#skillsTable tbody");
 				skillsTableBody.innerHTML = "";
 
@@ -746,7 +773,7 @@
 					const actionCell = document.createElement("td");
 					actionCell.style.width = "50px";
 					actionCell.style.textAlign = "center";
-					
+
 					const deleteBtn = document.createElement("i");
 					deleteBtn.className = "fas fa-times delete-skill-row-btn";
 					deleteBtn.title = "Delete skill category";
@@ -765,14 +792,18 @@
 				if (!skillsControls) {
 					skillsControls = document.createElement("div");
 					skillsControls.className = "skills-controls";
-					skillsTable.parentNode.insertBefore(skillsControls, skillsTable.nextSibling);
+					skillsTable.parentNode.insertBefore(
+						skillsControls,
+						skillsTable.nextSibling
+					);
 				}
 				skillsControls.innerHTML = "";
 
 				const addSkillRowBtn = document.createElement("button");
 				addSkillRowBtn.type = "button";
 				addSkillRowBtn.className = "btn btn-sm btn-outline-primary";
-				addSkillRowBtn.innerHTML = '<i class="fas fa-plus"></i> Add Skill Category';
+				addSkillRowBtn.innerHTML =
+					'<i class="fas fa-plus"></i> Add Skill Category';
 				addSkillRowBtn.onclick = function () {
 					const newRow = document.createElement("tr");
 					newRow.className = "skill-row";
@@ -812,7 +843,7 @@
 					const newActionCell = document.createElement("td");
 					newActionCell.style.width = "50px";
 					newActionCell.style.textAlign = "center";
-					
+
 					const newDeleteBtn = document.createElement("i");
 					newDeleteBtn.className = "fas fa-times delete-skill-row-btn";
 					newDeleteBtn.title = "Delete skill category";
@@ -996,7 +1027,7 @@
 					jobDiv.appendChild(achievementsList);
 					jobDiv.appendChild(achievementControls);
 					workExperienceContainer.appendChild(jobDiv);
-				});				// Set education
+				}); // Set education
 				const educationContainer = document.getElementById("education");
 				educationContainer.innerHTML = "";
 
@@ -1005,9 +1036,11 @@
 				educationList.className = "education-list";
 
 				// Handle education as array or single object
-				const educationEntries = Array.isArray(data.education) 
-					? data.education 
-					: data.education ? [data.education] : [];
+				const educationEntries = Array.isArray(data.education)
+					? data.education
+					: data.education
+					? [data.education]
+					: [];
 
 				educationEntries.forEach((education, index) => {
 					const eduDiv = document.createElement("div");
@@ -1088,8 +1121,8 @@
 					const gradYearEditable = document.createElement("span");
 					gradYearEditable.contentEditable = true;
 					gradYearEditable.className = "education-graduation";
-					gradYearEditable.textContent = education.graduation_year 
-						? `Graduation: ${education.graduation_year}` 
+					gradYearEditable.textContent = education.graduation_year
+						? `Graduation: ${education.graduation_year}`
 						: "Graduation: ";
 					gradYearDiv.appendChild(gradYearEditable);
 
@@ -1524,17 +1557,26 @@
 						dates: dates,
 						achievements: achievements,
 					});
-				});				currentResumeData.work_experience = updatedWorkExperience;
+				});
+				currentResumeData.work_experience = updatedWorkExperience;
 
 				// Collect education changes
 				const updatedEducation = [];
 				const educationEntries = document.querySelectorAll(".education-entry");
 
 				educationEntries.forEach((eduEntry) => {
-					const institution = eduEntry.querySelector(".education-institution").textContent.trim();
-					const eduLocation = eduEntry.querySelector(".education-location").textContent.trim();
-					const degree = eduEntry.querySelector(".education-degree").textContent.trim();
-					let gradYear = eduEntry.querySelector(".education-graduation").textContent.trim();
+					const institution = eduEntry
+						.querySelector(".education-institution")
+						.textContent.trim();
+					const eduLocation = eduEntry
+						.querySelector(".education-location")
+						.textContent.trim();
+					const degree = eduEntry
+						.querySelector(".education-degree")
+						.textContent.trim();
+					let gradYear = eduEntry
+						.querySelector(".education-graduation")
+						.textContent.trim();
 
 					// Extract just the year from "Graduation: YYYY"
 					if (gradYear.includes(":")) {
@@ -1542,8 +1584,12 @@
 					}
 
 					// Only add if not default values
-					if (institution && institution !== "New Institution" && 
-						degree && degree !== "Bachelor's Degree") {
+					if (
+						institution &&
+						institution !== "New Institution" &&
+						degree &&
+						degree !== "Bachelor's Degree"
+					) {
 						updatedEducation.push({
 							institution: institution,
 							location: eduLocation,
@@ -1551,7 +1597,8 @@
 							graduation_year: gradYear,
 						});
 					}
-				});				currentResumeData.education = updatedEducation;
+				});
+				currentResumeData.education = updatedEducation;
 
 				// Collect skills changes
 				const updatedTechnicalSkills = {};
@@ -1560,16 +1607,23 @@
 				editableSkillRows.forEach((row) => {
 					const categoryElement = row.querySelector(".skill-category");
 					const skillsElement = row.querySelector(".skill-list");
-					
+
 					if (categoryElement && skillsElement) {
 						const category = categoryElement.textContent.trim();
 						const skillsText = skillsElement.textContent.trim();
-						
+
 						// Only add if not default values
-						if (category && category !== "New Category" && 
-							skillsText && skillsText !== "Skill 1, Skill 2, Skill 3") {
+						if (
+							category &&
+							category !== "New Category" &&
+							skillsText &&
+							skillsText !== "Skill 1, Skill 2, Skill 3"
+						) {
 							// Convert skills string to array
-							const skillsArray = skillsText.split(",").map(skill => skill.trim()).filter(skill => skill);
+							const skillsArray = skillsText
+								.split(",")
+								.map((skill) => skill.trim())
+								.filter((skill) => skill);
 							updatedTechnicalSkills[category] = skillsArray;
 						}
 					}

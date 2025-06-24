@@ -6,8 +6,10 @@ load_dotenv()
 
 class Config:
     """Base configuration class"""
-    # API Key for Google Gemini API
-    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    # API Keys for Google Gemini API (supports multiple keys)
+    GEMINI_API_KEYS = []
+    if os.environ.get('GEMINI_API_KEYS'):
+        GEMINI_API_KEYS = [key.strip() for key in os.environ.get('GEMINI_API_KEYS').split(',')]
     
     # Flask settings
     SECRET_KEY = os.environ.get('SECRET_KEY', 'default-secret-key-please-change-in-production')

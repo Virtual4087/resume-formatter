@@ -21,44 +21,43 @@ def register_routes(app):
         selected_model = request.form.get('aiModel', 'gemini-1.5-flash')  # Default to gemini-1.5-flash
         
         if not resume_text or not resume_text.strip():
-            return "Error: Resume text cannot be empty.", 400
+            return jsonify({"status": "error", "message": "Error: Resume text cannot be empty."}), 400
 
         try:
-            # Get API key from app config
-            api_key = current_app.config.get('GEMINI_API_KEY')
-            parser = ResumeParser(api_key)
-            
-            parsed_resume = parser.parse_resume(resume_text, model=selected_model)
-            if parsed_resume:
-                # Extract skill categories in their original order
-                skill_order = list(parsed_resume['technical_skills'].keys())
-                
-                # Add the order information to the response
+            # Get API keys from app config or env
+            api_keys = current_app.config.get('GEMINI_API_KEYS')
+            if not api_keys:
+                api_key = current_app.config.get('GEMINI_API_KEY')
+                api_keys = [api_key] if api_key else []
+            parser = ResumeParser(api_keys)
+
+            # Use the progress-enabled parser
+            progress = []
+            final_result = None
+            for update in parser.parse_resume_with_progress(resume_text, model=selected_model):
+                progress.append(update)
+                if update.get("status") == "success":
+                    final_result = update["result"]
+                    break
+                if update.get("error"):
+                    break
+            if final_result:
+                skill_order = list(final_result['technical_skills'].keys())
                 return jsonify({
-                    "status": "success", 
+                    "status": "success",
                     "message": "Resume successfully processed.",
-                    "data": parsed_resume,
-                    "skill_order": skill_order,  # Include original skill category order
-                    "model_used": selected_model  # Include the model that was used
+                    "data": final_result,
+                    "skill_order": skill_order,
+                    "model_used": selected_model,
+                    "progress": progress
                 })
             else:
-                print("="*60)
-                print("ROUTE ERROR - PARSER RETURNED NONE")
-                print("="*60)
-                print(f"Model used: {selected_model}")
-                print(f"Resume text length: {len(resume_text)} characters")
-                print("Parser returned None - check console for detailed parsing errors above")
-                print("="*60)
-                return jsonify({"status": "error", "message": "Failed to parse resume. Check console for detailed error information."}), 500
+                return jsonify({
+                    "status": "error",
+                    "message": progress[-1]["status"] if progress else "Failed to parse resume.",
+                    "progress": progress
+                }), 500
         except Exception as e:
-            print("="*60)
-            print("ROUTE ERROR - UNEXPECTED ERROR IN SUBMIT")
-            print("="*60)
-            print(f"Error Type: {type(e).__name__}")
-            print(f"Error Message: {str(e)}")
-            print(f"Model selected: {selected_model}")
-            print(f"Resume text length: {len(resume_text)} characters")
-            print("="*60)
             return jsonify({"status": "error", "message": f"Server error: {str(e)}"}), 500
 
     @app.route('/generate', methods=['POST'])
