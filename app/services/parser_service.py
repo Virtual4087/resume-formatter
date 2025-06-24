@@ -114,7 +114,7 @@ class ResumeParser:
             chat = self.client.chats.create(
                 model=model,
                 config=types.GenerateContentConfig(
-                    max_output_tokens=4000,
+                    max_output_tokens=8000,
                     temperature=0.1,
                     response_mime_type="application/json",
                 )

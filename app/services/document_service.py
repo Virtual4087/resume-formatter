@@ -128,9 +128,10 @@ class DocumentGenerator:
                 print(resume_data[:500] + "..." if len(resume_data) > 500 else resume_data)
                 print("="*60)
                 raise ValueError(f"Invalid JSON string: {str(e)}") from e
-                
-        # Validate required sections
-        required_sections = ['contact', 'summary', 'technical_skills', 'work_experience', 'education']
+                  # Validate required sections
+        required_sections = ['contact', 'summary', 'technical_skills', 'work_experience']
+        # Education is optional - it will be skipped if empty
+        optional_sections = ['education', 'certifications']
         missing_sections = []
         for section in required_sections:
             if section not in resume_data:
@@ -289,11 +290,23 @@ class DocumentGenerator:
             for achievement in job['achievements']:                
                 achievement = achievement.replace("●", "").strip()
                 doc.add_paragraph(achievement, style='ListBullet')
-        
-        # ===== Education =====
-        edu_heading = doc.add_paragraph()
-        edu_heading.add_run('Education:').bold = True        
-        self._add_education(doc, resume_data['education'])
+          # ===== Education =====
+        # Only add education section if there are valid education entries
+        education_data = resume_data.get('education', [])
+        if education_data:
+            # Handle both single education object and array of education entries
+            education_entries = education_data if isinstance(education_data, list) else [education_data]
+            # Check if there are any valid, non-empty education entries
+            valid_education = [
+                edu for edu in education_entries 
+                if edu and isinstance(edu, dict) and 
+                any(edu.get(field, '').strip() for field in ['institution', 'degree', 'graduation_year'])
+            ]
+            
+            if valid_education:
+                edu_heading = doc.add_paragraph()
+                edu_heading.add_run('Education:').bold = True        
+                self._add_education(doc, education_data)
           # ===== Certifications =====
         if 'certifications' in resume_data and resume_data['certifications']:
             cert_heading = doc.add_paragraph()
@@ -383,6 +396,16 @@ class DocumentGenerator:
             # Skip empty or invalid entries
             if not edu_entry or not isinstance(edu_entry, dict):
                 continue
+            
+            # Only add entries that have at least institution or degree
+            institution = edu_entry.get('institution', '').strip()
+            degree = edu_entry.get('degree', '').strip()
+            graduation_year = edu_entry.get('graduation_year', '').strip()
+            location = edu_entry.get('location', '').strip()
+            
+            # Skip if no meaningful education data
+            if not any([institution, degree, graduation_year]):
+                continue
                 
             # Create a 1-row, 2-column table for each education entry
             table = doc.add_table(rows=2, cols=2)
@@ -392,7 +415,7 @@ class DocumentGenerator:
             left_p = left_top.paragraphs[0]
             left_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             left_p.paragraph_format.space_after = Pt(0)  # Remove space after
-            left_run_institution = left_p.add_run(edu_entry.get('institution', ''))
+            left_run_institution = left_p.add_run(institution)
             left_run_institution.italic = True
             left_run_institution.bold = True
 
@@ -403,8 +426,7 @@ class DocumentGenerator:
             left_p.paragraph_format.space_after = Pt(0)  # Remove space after
             
             # Fix apostrophe character encoding issues
-            degree_text = edu_entry.get('degree', '')
-            degree_text = degree_text.replace('â', "'").replace('â', "'").replace('\u00e2', "'")
+            degree_text = degree.replace('â', "'").replace('â', "'").replace('\u00e2', "'")
             
             left_run_degree = left_p.add_run(degree_text)
             left_run_degree.italic = True
@@ -414,7 +436,7 @@ class DocumentGenerator:
             right_p = right_top.paragraphs[0]
             right_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             right_p.paragraph_format.space_after = Pt(0)  # Remove space after
-            right_run_location = right_p.add_run(edu_entry.get('location', ''))
+            right_run_location = right_p.add_run(location)
             right_run_location.bold = True
             right_run_location.italic = True
 
@@ -422,7 +444,6 @@ class DocumentGenerator:
             right_p = right_bottom.paragraphs[0]
             right_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             right_p.paragraph_format.space_after = Pt(0)  # Remove space after
-            graduation_year = edu_entry.get('graduation_year', '')
             dates = str(graduation_year).replace('\u00e2', '-').replace('  ', ' ')
             right_run_dates = right_p.add_run(f"Graduation: {dates}")
             right_run_dates.italic = True
